@@ -13,4 +13,6 @@
 
 `$ docker-compose up -d`
 
+`$ ./run.sh`
+
 Then, you have to open http://localhost:8080
