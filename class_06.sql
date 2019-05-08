@@ -17,15 +17,15 @@ SELECT a.first_name, a.last_name
 -- 3
 SELECT c.first_name, c.last_name
     FROM customer c
-    WHERE EXISTS (SELECT customer_id, COUNT(inventory_id)
-                    FROM rental
+    WHERE c.customer_id IN (SELECT r.customer_id
+                    FROM rental r
                     GROUP BY customer_id
                     HAVING COUNT(inventory_id) = 1);
 
 -- 4
 SELECT c.first_name, c.last_name
     FROM customer c
-    WHERE EXISTS (SELECT customer_id, COUNT(inventory_id)
+    WHERE c.customer_id IN (SELECT customer_id
                     FROM rental
                     GROUP BY customer_id
                     HAVING COUNT(inventory_id) > 1);
