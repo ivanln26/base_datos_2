@@ -35,18 +35,18 @@ SELECT rating, AVG(`length`)
     HAVING AVG(`length`) > (SELECT AVG(`length`) FROM film);
 
 -- 1
-SELECT country, COUNT(c.city) AS cities
+SELECT country, COUNT(c.city_id) AS cities
     FROM country co INNER JOIN city c
     ON co.country_id = c.country_id
-    GROUP BY country
-    ORDER BY co.country;
+    GROUP BY co.country_id
+    ORDER BY co.country, co.country_id;
 
 -- 2
-SELECT country, COUNT(city) AS cities
+SELECT country, COUNT(c.city_id) AS cities
     FROM country co INNER JOIN city c
     ON co.country_id = c.country_id
-    GROUP BY country
-    HAVING COUNT(city) > 10
+    GROUP BY co.country_id
+    HAVING cities > 10
     ORDER BY cities desc;
 
 -- 3
@@ -69,4 +69,4 @@ SELECT c.name, AVG(`length`)
 SELECT rating, SUM(p.amount)
     FROM film f INNER JOIN inventory i INNER JOIN rental r INNER JOIN payment p
     ON f.film_id = i.film_id AND i.inventory_id = r.inventory_id AND r.rental_id = p.rental_id
-    GROUP BY rating;
+    GROUP BY f.rating;
