@@ -15,11 +15,11 @@ SELECT f.title, i.inventory_id, r.inventory_id
 
 -- 3
 SELECT c.first_name, c.last_name, s.store_id, f.title, r.return_date
-    FROM film f
-    INNER JOIN inventory i ON f.film_id = i.film_id
-    INNER JOIN store s ON i.inventory_id = s.store_id
-    INNER JOIN customer c ON s.store_id = c.store_id
+    FROM customer c
     INNER JOIN rental r ON c.customer_id = r.customer_id
+    INNER JOIN store s ON c.store_id = s.store_id
+    INNER JOIN inventory i ON r.inventory_id = i.inventory_id
+    INNER JOIN film f ON i.film_id = f.film_id
     WHERE r.return_date IS NOT NULL
     ORDER BY s.store_id, c.last_name;
 
