@@ -1,34 +1,38 @@
 USE sakila;
 
 -- 1
-SELECT *
+SELECT f.title
     FROM film f LEFT JOIN inventory i
     ON f.film_id = i.film_id
     WHERE i.film_id IS NULL;
 
+SELECT f.title
+	FROM film f
+	WHERE f.film_id NOT IN (SELECT i.film_id
+								FROM inventory i);
+
 -- 2
-SELECT f.title, i.inventory_id, r.inventory_id
+SELECT f.title, i.inventory_id, r.rental_id
     FROM film f 
     INNER JOIN inventory i ON f.film_id = i.film_id
     LEFT JOIN rental r ON i.inventory_id = r.inventory_id
-    WHERE r.inventory_id IS NULL;
+    WHERE r.rental_id IS NULL;
 
 -- 3
-SELECT c.first_name, c.last_name, s.store_id, f.title, r.return_date
-    FROM customer c
-    INNER JOIN rental r ON c.customer_id = r.customer_id
-    INNER JOIN store s ON c.store_id = s.store_id
-    INNER JOIN inventory i ON r.inventory_id = i.inventory_id
-    INNER JOIN film f ON i.film_id = f.film_id
-    WHERE r.return_date IS NOT NULL
-    ORDER BY s.store_id, c.last_name;
+SELECT c.first_name, c.last_name, i.store_id, f.title, r.rental_date, r.return_date
+	FROM film f
+	INNER JOIN inventory i USING (film_id)
+	INNER JOIN rental r USING (inventory_id)
+	INNER JOIN customer c USING (customer_id)
+	WHERE r.return_date IS NOT NULL
+	ORDER BY i.store_id, c.last_name;
 
 -- 4
 SELECT
     CONCAT_WS(" ", ci.city, co.country) AS 'address',
     CONCAT_WS(" ", st.first_name, st.last_name) AS 'name',
     s.store_id,
-    SUM(p.amount)
+    SUM(p.amount) AS 'total_sales'
     FROM store s
     INNER JOIN customer c ON s.store_id = c.store_id
     INNER JOIN rental r ON c.customer_id = r.customer_id
