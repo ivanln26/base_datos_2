@@ -3,7 +3,6 @@ USE sakila;
 -- 1
 SELECT * FROM customer ORDER BY customer_id DESC;
 
-
 DELETE FROM customer WHERE customer_id = 600;
 
 INSERT INTO customer
@@ -22,18 +21,15 @@ INSERT INTO customer
                                         WHERE co2.country LIKE 'United States')), 1);
 
 -- 2
-SELECT * FROM rental ORDER BY rental_id DESC;
-SELECT * FROM inventory ORDER BY inventory_id DESC;
-SELECT * FROM customer ORDER BY customer_id DESC;
-SELECT * FROM staff WHERE store_id = 2;
-SELECT * FROM rental ORDER BY rental_id DESC;
-
-DELETE FROM rental WHERE rental_id = 16050;
+SELECT * FROM rental r ORDER BY rental_id DESC;
 
 INSERT INTO rental
-    (rental_id, inventory_id, customer_id, staff_id)
-    VALUES
-    (16050, 4581, 600, 2);
+	(rental_date, inventory_id, customer_id, return_date, staff_id)
+SELECT CURRENT_TIMESTAMP,
+	(SELECT MAX(i.inventory_id) FROM inventory i INNER JOIN film f USING (film_id) WHERE f.title = "ARABIA DOGMA" LIMIT 1),
+	600,
+	NULL,
+	(SELECT staff_id FROM staff s INNER JOIN store st USING (store_id) WHERE st.store_id = 2 LIMIT 1);
 
 -- 3
 -- G --> 2000
@@ -49,40 +45,69 @@ UPDATE film f SET f.release_year = 2004 WHERE f.rating LIKE 'PG-13';
 UPDATE film f SET f.release_year = 2006 WHERE f.rating LIKE 'R';
 UPDATE film f SET f.release_year = 2010 WHERE f.rating LIKE 'NC-17';
 
--- 3
-SELECT rental_id, rental_date, return_date
-    FROM rental r
-    WHERE r.return_date IS NULL
-    ORDER BY r.rental_date DESC
-    LIMIT 1;
-
 -- 4
-SELECT rental_id, rental_date, return_date FROM rental WHERE rental_id = 16050;
+SELECT rental_id, rental_rate, customer_id, staff_id
+	FROM film
+	INNER JOIN inventory USING (film_id)
+	INNER JOIN rental USING (inventory_id)
+	WHERE rental.return_date IS NULL
+	LIMIT 1;
 
-UPDATE rental SET return_date = NULL WHERE rental_id = 16050;
-
-UPDATE rental SET return_date = NOW()
-    WHERE rental_id = (SELECT rental_id
-                            FROM (SELECT r2.rental_id
-                                        FROM rental r2
-                                        WHERE r2.return_date IS NULL
-                                        ORDER BY r2.rental_date DESC
-                                        LIMIT 1) r);    
+UPDATE rental
+	SET return_date = CURRENT_TIMESTAMP
+	WHERE rental_id = 11496;
 
 -- 5
 SELECT * FROM film f ORDER BY f.film_id DESC;
 
-DELETE FROM film f WHERE f.film_id = 1000;
+DELETE FROM film WHERE film_id = 1000;
+
+-- Steps
+DELETE FROM payment
+	WHERE rental_id IN (SELECT rental_id
+							FROM rental
+							INNER JOIN inventory USING (inventory_id)
+							WHERE film_id = 1);
+
+DELETE FROM rental
+	WHERE inventory_id IN (SELECT inventory_id
+								FROM inventory
+								WHERE film_id = 1);
+
+DELETE FROM inventory WHERE film_id = 1;
+
+DELETE film_actor FROM film_actor WHERE film_id = 1;
+
+DELETE film_category FROM film_category WHERE film_id = 1;
+
+DELETE film FROM film WHERE film_id = 1;
 
 -- 6
-SELECT *
-    FROM store s
-    INNER JOIN inventory i ON s.store_id = i.store_id
-    INNER JOIN rental r ON i.inventory_id = r.inventory_id;
+SELECT inventory_id, film_id
+	FROM inventory
+	WHERE inventory_id NOT IN (SELECT inventory_id
+									FROM inventory
+									INNER JOIN rental USING (inventory_id)
+									WHERE return_date IS NULL);
 
+# inventory id to use: 10
+# film id to use: 2
 
+INSERT INTO rental
+	(rental_date, inventory_id, customer_id, staff_id)
+VALUES (
+	CURRENT_DATE(),	
+	10,
+	(SELECT customer_id FROM customer ORDER BY customer_id DESC LIMIT 1),
+	(SELECT staff_id FROM staff WHERE store_id = (SELECT store_id FROM inventory WHERE inventory_id = 10))
+);
 
-
-
-
-
+INSERT INTO payment
+	(customer_id, staff_id, rental_id, amount, payment_date)		
+VALUES (	
+	(SELECT customer_id FROM customer ORDER BY customer_id DESC LIMIT 1),
+	(SELECT staff_id FROM staff LIMIT 1),
+	(SELECT rental_id FROM rental ORDER BY rental_id DESC LIMIT 1) ,
+	(SELECT rental_rate FROM film WHERE film_id = 2),
+	CURRENT_DATE()
+);
