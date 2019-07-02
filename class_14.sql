@@ -26,14 +26,60 @@ SELECT f.title, f.release_year, CONCAT_WS(" ", a.first_name, a.last_name) as 'na
     FROM film f
     INNER JOIN film_actor fa ON f.film_id = fa.film_id
     INNER JOIN actor a ON fa.actor_id = a.actor_id
-    WHERE LOWER(CONCAT_WS(" ", a.first_name, a.last_name)) = 'penelope guiness';
-
+    WHERE CONCAT_WS(" ", a.first_name, a.last_name) LIKE TRIM(UPPER(' PeNELope guiNESs'));
+   
 -- 4
-SELECT CONCAT_WS(" ", c.first_name, c.last_name) as 'name', r.rental_date,
+SELECT
+	f.title,
+	CONCAT_WS(" ", c.first_name, c.last_name) AS 'name',
+	MONTHNAME(r.rental_date) AS 'month',
     CASE
         WHEN r.return_date IS NOT NULL THEN 'Yes'
         ELSE 'No'
-    END AS 'returned'
-    FROM customer c
-    INNER JOIN rental r ON c.customer_id = r.customer_id
-    WHERE MONTH(r.rental_date) BETWEEN 5 AND 6;
+    END AS 'was_returned'
+FROM customer c
+	INNER JOIN rental r ON c.customer_id = r.customer_id
+	INNER JOIN inventory i ON r.inventory_id = i.inventory_id
+	INNER JOIN film f ON i.film_id = f.film_id
+	WHERE MONTH(r.rental_date) BETWEEN 5 AND 6;
+
+-- 5
+
+-- CAST and CONVERT have barely no differences between them.
+-- While CAST has a slightly distinct syntax than CONVERT,they're both used to convert data from one type to another.
+
+SELECT CAST(last_update AS DATE) AS only_date FROM rental;
+
+SELECT CONVERT("2006-02-15", DATETIME);
+
+-- 6
+
+-- NVL() and IFNULL() functions work in the same way: 
+-- they check whether an expression is NULL or not; if it is, they return a second expression (a default value).
+
+-- NVL() is an Oracle function, so here is an IFNULL() example:
+
+SELECT rental_id, IFNULL(return_date, 'La pelicula no fue devuelta aun') as 'fecha_de_devolucion'
+	FROM rental
+	WHERE rental_id = 1261
+	OR rental_id = 12611;
+
+-- ISNULL() function returns 1 if the expression passed is NULL, otherwise it returns 0.
+
+SELECT rental_id, ISNULL(return_date) as pelicula_faltante
+	FROM rental
+	WHERE rental_id = 12610
+	OR rental_id = 12611;
+
+-- COALESCE() function returns the first non-NULL argument of the passed list.
+
+SELECT COALESCE (
+	NULL,
+	NULL,
+	(SELECT return_date
+		FROM rental
+		WHERE rental_id = 12610), -- null date
+    (SELECT return_date
+        FROM rental
+        WHERE rental_id = 12611)
+) as primer_valor_no_nulo;
